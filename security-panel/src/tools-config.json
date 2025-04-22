@@ -1,0 +1,17 @@
+{
+  "nmap": {
+    "label": "Nmap",
+    "parameters": [
+      { "type": "checkbox", "name": "versionDetect", "label": "Sürüm Tespiti", "flag": "-sV" },
+      { "type": "checkbox", "name": "osDetect", "label": "İşletim Sistemi Tespiti", "flag": "-O" },
+      { "type": "text", "name": "target", "label": "Hedef IP", "placeholder": "192.168.1.1", "flag": "" }
+    ]
+  },
+  "dirb": {
+    "label": "Dirb",
+    "parameters": [
+      { "type": "text", "name": "url", "label": "Hedef URL", "placeholder": "http://site.com", "flag": "" },
+      { "type": "text", "name": "wordlist", "label": "Wordlist", "placeholder": "/usr/share/wordlists/common.txt", "flag": "" }
+    ]
+  }
+}
