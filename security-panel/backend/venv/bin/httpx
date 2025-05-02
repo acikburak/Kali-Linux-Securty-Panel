@@ -1,4 +1,4 @@
-#!/home/kali/Masaüstü/security-panel/security-panel/backend/venv/bin/python3
+#!/home/kali/Masaüstü/Kali-Linux-Securty-Panel/security-panel/backend/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

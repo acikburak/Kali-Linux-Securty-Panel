@@ -6,11 +6,9 @@ import json
 import re
 import shlex
 import platform
-import threading
 
 from datetime import datetime
-from gradio_client import Client
-from chatbot_interface import create_gradio_interface
+
 app = Flask(__name__)
 CORS(app)
 
@@ -24,80 +22,53 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/chatbot')
-def chatbot_redirect():
-    return redirect("http://localhost:7860", code=302)
-
-# ✅ AI terminal bağlantısını başlatan fonksiyon
-def start_terminal_bridge():
-    if not os.path.exists("/tmp/kai_terminal_input.sh"):
-        print("⚙️ Terminal köprüsü başlatılıyor...")
-        try:
-            os.makedirs("/tmp", exist_ok=True)
-            subprocess.call("touch /tmp/kai_terminal_input.sh /tmp/kai_terminal_output.log", shell=True)
-            subprocess.Popen(
-                "bash -c 'tail -f /tmp/kai_terminal_input.sh | bash | tee -a /tmp/kai_terminal_output.log'",
-                shell=True
-            )
-            print("✅ Terminal köprüsü başarıyla başlatıldı.")
-        except Exception as e:
-            print(f"❌ Terminal köprüsü başlatılamadı: {e}")
-    else:
-        print("ℹ️ Terminal köprüsü zaten açık görünüyor.")
-
-
-def start_terminal_tail_log():
-    try:
-        subprocess.Popen(
-            ['gnome-terminal', '--', 'bash', '-c', 'tail -f /tmp/kai_terminal_output.log'],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        print("📡 Terminalde çıktı izleme başlatıldı.")
-    except Exception as e:
-        print(f"❌ Çıktı izleyici başlatılamadı: {e}")
-
-
 @app.route('/ai-suggest', methods=['POST'])
 def ai_suggest():
     try:
         data = request.get_json()
         command = data.get('command', '').strip()
-        system_message = data.get('system_message', "Sen Kali Linux asistanısın. Kısa, net cevaplar ver. Türkçe konuş.")
-        history = data.get('history', [])
+        ip = data.get('ip', '').strip()
 
         if not command or len(command) < 3:
             return jsonify({'type': 'error', 'message': 'Geçersiz komut'}), 400
 
-        client = Client("acikburak/ai2")
-        result = client.predict(
-            message=command,
-            system_message=system_message,
-            max_tokens=512,
-            temperature=0.7,
-            top_p=0.95,
-            api_name="/chat"
+        # IP'yi komutla birleştir
+        full_command = f"{command} {ip}"
+
+        # Ollama çağrısı
+        proc = subprocess.Popen(
+            ['ollama', 'run', 'kali-fix', full_command],  # Burada ip'yi komuta dahil ettik
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
+        
+        try:
+            stdout, stderr = proc.communicate(timeout=6000)
+            if proc.returncode != 0:
+                raise Exception(stderr)
+                
+            return jsonify({
+                'type': 'suggestion',
+                'message': stdout.strip()
+            })
 
-        if isinstance(result, dict) and "error" in result:
-            return jsonify({'type': 'error', 'message': f"AI API hatası: {result['error']}"}), 500
-
-        return jsonify({'type': 'suggestion', 'message': result})
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            return jsonify({
+                'type': 'error',
+                'message': 'AI zaman aşımı'
+            }), 500
 
     except Exception as e:
-        return jsonify({'type': 'error', 'message': f"Sunucu hatası: {str(e)}"}), 500
+        return jsonify({
+            'type': 'error',
+            'message': f"AI hatası: {str(e)}"
+        }), 500
 
-# 🧠 Terminal çıktısını sürekli izleyen AI gözlemcisi (isteğe bağlı)
-def monitor_terminal_output():
-    try:
-        with open('/tmp/kai_terminal_output.log', 'r') as f:
-            f.seek(0, 2)
-            while True:
-                line = f.readline()
-                if line:
-                    print(f"📤 Terminal çıktısı: {line.strip()}")
-    except Exception as e:
-        print(f"❌ Terminal izleme hatası: {e}")
+            
+
+
 
 @app.route('/run-in-terminal', methods=['POST'])
 def run_in_terminal():
@@ -546,25 +517,5 @@ def get_tool_help(tool_name):
 if __name__ == '__main__':
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
-    
-     # 🎯 Terminal bağlantısını başlat
-    start_terminal_bridge()
-
-    # (İsteğe bağlı) AI gözlemcisi
-    threading.Thread(target=monitor_terminal_output, daemon=True).start()
-
-    # Gradio arayüzü başlat
-    interface = create_gradio_interface()
-    interface.queue().launch(
-        inline=True,
-        inbrowser=False,
-        share=False,
-        server_name="0.0.0.0",
-        server_port=7860,
-        prevent_thread_lock=True,
-        show_api=False
-    )
-
-    
     print("🚀 Flask sunucusu başlatıldı.")
     app.run(host='0.0.0.0', port=5050)

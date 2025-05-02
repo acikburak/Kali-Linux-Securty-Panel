@@ -1,0 +1,3 @@
+# Nmap 7.95 scan initiated Fri May  2 01:37:40 2025 as: /usr/lib/nmap/nmap --privileged -p 21 -sCV -oN 192.168.238.147
+WARNING: No targets were specified, so 0 hosts scanned.
+# Nmap done at Fri May  2 01:37:40 2025 -- 0 IP addresses (0 hosts up) scanned in 0.56 seconds

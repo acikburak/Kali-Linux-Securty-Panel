@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "Yapay zeka hazırlanıyor"
-ollama rm kali-fix
-ollama create kali-fix -f kali-fix.Modelfile
+#echo "Yapay zeka hazırlanıyor"
+#ollama rm kali-fix
+#ollama create kali-fix -f kali-fix.Modelfile
 
 echo "🔍 Ortam kontrol ediliyor..."
 

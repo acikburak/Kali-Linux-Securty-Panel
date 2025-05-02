@@ -50,7 +50,7 @@ const getAiSuggestion = async () => {
 
   try {
     const res = await axios.post('http://localhost:5050/ai-suggest', {
-      command: customCommand,
+      command: customCommand +" Sadece kodu incele ve önerilen kodu yaz",
       tool: selectedTool,
       ip: targetIP
     })
@@ -287,6 +287,22 @@ useEffect(() => {
 >
   📊 Bulgular
 </div>
+<div
+  onClick={() => {
+    if (!activeProject) {
+      alert("Lütfen önce bir proje seçin.")
+      return
+    }
+    window.open(
+      `http://localhost:7860/?ip=${encodeURIComponent(targetIP)}&project=${encodeURIComponent(activeProject)}&tool=${encodeURIComponent(selectedTool)}`,
+      '_blank',
+      'width=600,height=800'
+    )
+  }}
+  style={{ cursor: 'pointer' }}
+>
+  <span>🤖 ChatBot</span>
+</div>
 
 
 
@@ -435,7 +451,7 @@ useEffect(() => {
     onClick={getAiSuggestion}
     title="Yapay zekadan öneri al"    
   >
-    🤖
+    İncele 🤖
   </button> <strong> Oluşan Komut: </strong>
               <textarea value={customCommand} onChange={(e) => setCustomCommand(e.target.value)} />
               <input
@@ -500,48 +516,63 @@ useEffect(() => {
             </div>
           </div>
 	
-	 <div className="terminal">
-	 <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-	  <strong
-	    onClick={() => setActiveTab('terminal')}
-	    style={{ cursor: 'pointer', color: activeTab === 'terminal' ? '#4fc3f7' : '#ccc' }}>
-	    Terminal
-	  </strong>
-	  <strong
-	    onClick={() => setActiveTab('notes')}
-	    style={{ cursor: 'pointer', color: activeTab === 'notes' ? '#4fc3f7' : '#ccc' }}>
-	    Bulgu Ekle
-	  </strong>
-	</div>
-	{activeTab === 'terminal' ? (
-	  <>
-	   
-	   
-		<div className="terminal-output">
-		  {toolSessions[selectedTool]?.terminalOutput?.split('\n').map((line, i) => (
-		    <div key={i} style={{ 
-		      color: line.startsWith('❌') ? '#ff5252' : 
-			     line.startsWith('✅') ? '#4caf50' : '#ccc'
-		    }}>
-		      {line}
-		    </div>
-		  ))}
-		</div>
-	    <input
-              ref={commandInputRef}
-              type="text"
-              placeholder="$ komut girin"
-              onKeyDown={handleTerminalEnter}
-              className="terminal-input"
-            />
-          
-	  </>
-	) : (
-	  <div className="terminal-output" style={{ padding: '1rem', color: '#ccc' }}>
-	<NotePanel project={activeProject} ip={targetIP} tool={selectedTool} />
-	  </div>
-	)}
-	  </div>
+	<div className="terminal">
+  <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+    <strong
+      onClick={() => setActiveTab('terminal')}
+      style={{ cursor: 'pointer', color: activeTab === 'terminal' ? '#4fc3f7' : '#ccc' }}>
+      Terminal
+    </strong>
+    <strong
+      onClick={() => setActiveTab('notes')}
+      style={{ cursor: 'pointer', color: activeTab === 'notes' ? '#4fc3f7' : '#ccc' }}>
+      Bulgu Ekle
+    </strong>
+    <strong
+      onClick={() => setActiveTab('chatbot')}
+      style={{ cursor: 'pointer', color: activeTab === 'chatbot' ? '#4fc3f7' : '#ccc' }}>
+      Chatbot
+    </strong>
+  </div>
+
+  {activeTab === 'terminal' ? (
+    <>
+      <div className="terminal-output">
+        {toolSessions[selectedTool]?.terminalOutput?.split('\n').map((line, i) => (
+          <div key={i} style={{
+            color: line.startsWith('❌') ? '#ff5252' :
+                   line.startsWith('✅') ? '#4caf50' : '#ccc'
+          }}>
+            {line}
+          </div>
+        ))}
+      </div>
+      <input
+        ref={commandInputRef}
+        type="text"
+        placeholder="$ komut girin"
+        onKeyDown={handleTerminalEnter}
+        className="terminal-input"
+      />
+    </>
+  ) : activeTab === 'notes' ? (
+    <div className="terminal-output" style={{ padding: '1rem', color: '#ccc' }}>
+      <NotePanel project={activeProject} ip={targetIP} tool={selectedTool} />
+    </div>
+  ) : activeTab === 'chatbot' ? (
+    <div className="terminal-output" style={{ padding: '1rem', color: '#ccc' }}>
+      <iframe
+	  src={`http://localhost:7860/?ip=${targetIP}&project=${activeProject}&tool=${selectedTool}`}
+	  width="100%"
+	  height="700px"
+	  style={{ border: '2px solid #4fc3f7', borderRadius: '8px', background: '#fff' }}
+	  title="Bilal Chatbot"
+	/>
+
+    </div>
+  ) : null}
+</div>
+
 
 
         
