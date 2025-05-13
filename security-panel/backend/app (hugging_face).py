@@ -61,56 +61,31 @@ def start_terminal_tail_log():
 @app.route('/ai-suggest', methods=['POST'])
 def ai_suggest():
     try:
-        print("📥 /ai-suggest endpointi çağrıldı")
-
         data = request.get_json()
-        print("📦 Gelen veri:", data)
-
         command = data.get('command', '').strip()
-        ip = data.get('ip', '').strip()
+        system_message = data.get('system_message', "Sen Kali Linux asistanısın. Kısa, net cevaplar ver. Türkçe konuş.")
+        history = data.get('history', [])
 
         if not command or len(command) < 3:
-            print("❌ Geçersiz komut alındı:", command)
             return jsonify({'type': 'error', 'message': 'Geçersiz komut'}), 400
 
-        full_command = f"{command} {ip}"
-        print("🧠 Birleştirilmiş komut:", full_command)
-
-        cmd = ['ollama', 'run', 'kali-fix', full_command]
-        print("🚀 Çalıştırılacak komut listesi:", cmd)
-
-        # ❌ ZAMAN AŞIMI YOK!
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+        client = Client("acikburak/ai2")
+        result = client.predict(
+            message=command,
+            system_message=system_message,
+            max_tokens=512,
+            temperature=0.7,
+            top_p=0.95,
+            api_name="/chat"
         )
 
-        stdout, stderr = proc.communicate()  # ⏳ sonsuz bekler
+        if isinstance(result, dict) and "error" in result:
+            return jsonify({'type': 'error', 'message': f"AI API hatası: {result['error']}"}), 500
 
-        print("📤 Ollama stdout:", stdout)
-        print("⚠️ Ollama stderr:", stderr)
-
-        if proc.returncode != 0:
-            print(f"❌ Ollama çalıştırma hatası, kod: {proc.returncode}")
-            raise Exception(stderr)
-
-        print("✅ AI cevabı başarıyla alındı.")
-        return jsonify({
-            'type': 'suggestion',
-            'message': stdout.strip()
-        })
+        return jsonify({'type': 'suggestion', 'message': result})
 
     except Exception as e:
-        print(f"❌ Genel AI çökmesi: {str(e)}")
-        return jsonify({
-            'type': 'error',
-            'message': f"AI hatası: {str(e)}"
-        }), 500
-
-
-
+        return jsonify({'type': 'error', 'message': f"Sunucu hatası: {str(e)}"}), 500
 
 # 🧠 Terminal çıktısını sürekli izleyen AI gözlemcisi (isteğe bağlı)
 def monitor_terminal_output():
